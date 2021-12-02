@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 - Pomodoro || Advent of JavaScript</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+
+  <div class="wrapper">
+    <div class="ring">
+      <svg width="518" height="518" viewBox="0 0 518 518">
+        <circle stroke-width="9px" x="0" y="y" cx="259" cy="259" r="254" />
+      </svg>
+    </div>
+
+    <div class="timer">
+      <div class="time">
+        <div class="minutes">
+          <input type="text" value="15" disabled />
+        </div>
+        <div class="colon">:</div>
+        <div class="seconds">
+          <input type="text" value="00" disabled />
+        </div>
+      </div>
+      <button class="start">start</button>
+      <button class="settings">
+        <img src="images/gear.svg" alt="Settings" />
+      </button>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    let interval = null;
+
+    const getTotalSeconds = () => {
+      const minutes = document.querySelector('.minutes input');
+      const seconds = document.querySelector('.seconds input');
+      const totalSeconds = +(minutes.value || '0') * 60 + +(seconds.value || '0');
+
+      return totalSeconds;
+    };
+
+    const updateTimeLeft = secondsLeft => {
+      const minutes = document.querySelector('.minutes input');
+      const seconds = document.querySelector('.seconds input');
+      const displaySeconds = secondsLeft % 60;
+
+      seconds.value = displaySeconds % 60 < 10 ? `0${displaySeconds}` : displaySeconds;
+      minutes.value = Math.floor(secondsLeft / 60);
+    };
+
+    const redrawCircle = percentLeft => {
+      const svg = document.querySelector('.ring svg');
+      const circle = svg.querySelector('circle');
+      const radius = +circle.getAttribute('r');
+      const circumference = 2 * Math.PI * radius;
+      const draw = percentLeft * circumference / 100;
+
+      svg.style.strokeDasharray = `${draw} 999`;
+
+      console.log({
+        circumference,
+        draw,
+        percentLeft,
+        radius,
+      });
+    };
+
+    const countdown = () => {
+      const totalSeconds = getTotalSeconds();
+      const startTime = new Date();
+
+      interval = setInterval(() => {
+        const currentTime = new Date();
+        const millisecondsElapsed = currentTime.getTime() - startTime.getTime();
+        const secondsElapsed = Math.floor(millisecondsElapsed / 1000);
+        const secondsLeft = totalSeconds - secondsElapsed;
+
+        updateTimeLeft(secondsLeft);
+
+        const percentElapsed = secondsElapsed / totalSeconds * 100;
+
+        redrawCircle(100 - percentElapsed);
+
+        if (secondsLeft <= 0) {
+          clearInterval(interval);
+          interval = null;
+          alert('Time is up!');
+          updateTimeLeft(totalSeconds);
+        }
+      }, 1000);
+    };
+
+    const startTimer = startButton => {
+      startButton.innerText = 'stop';
+      startButton.classList.add('stop');
+
+      const ring = document.querySelector('.ring');
+
+      ring.classList.add('ending');
+
+      const settings = document.querySelector('.settings');
+
+      settings.disabled = true;
+
+      changeTime(true);
+
+      countdown();
+    };
+
+    const stopTimer = stopButton => {
+      stopButton.innerText = 'start';
+      stopButton.classList.remove('stop');
+
+      const ring = document.querySelector('.ring');
+
+      ring.classList.remove('ending');
+
+      const settings = document.querySelector('.settings');
+
+      settings.disabled = false;
+
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const changeTime = forceDisable => {
+      const minutes = document.querySelector('.minutes input');
+      const seconds = document.querySelector('.seconds input');
+
+      if (typeof forceDisable === 'boolean') {
+        minutes.disabled = forceDisable;
+        seconds.disabled = forceDisable;
+      } else {
+        minutes.disabled = !minutes.disabled;
+        seconds.disabled = !seconds.disabled;
+      }
+    };
+
+    const wrapper = document.querySelector('.wrapper');
+
+    wrapper.addEventListener('click', event => {
+      const target = event.target;
+
+      if (target.classList.contains('stop')) {
+        stopTimer(target);
+      } else if (target.classList.contains('start')) {
+        startTimer(target);
+      } else if (target.classList.contains('settings') || (target.parentNode.classList.contains('settings') && !target.parentNode.disabled)) {
+        changeTime();
+      }
+    });
+  </script>
+</body>
+
+</html>
